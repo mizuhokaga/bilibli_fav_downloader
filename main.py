@@ -1,16 +1,33 @@
-# 这是一个示例 Python 脚本。
+import json
 
-# 按 Alt+Shift+X 执行或将其替换为您的代码。
-# 按 双击 Shift 在所有地方搜索类、文件、工具窗口、操作和设置。
+import requests
 
-
-def print_hi(name):
-    # 在下面的代码行中使用断点来调试脚本。
-    print(f'Hi, {name}')  # 按 Ctrl+Shift+B 切换断点。
+from utils.downloader import download_list
 
 
-# 按装订区域中的绿色按钮以运行脚本。
+def get_specific_public_fav_list(fav_id, page_num=1, page_size=20) -> list:
+    """
+    获取指定文件夹下所有视频的bv号
+    """
+    url = 'https://api.bilibili.com/x/v3/fav/resource/list'
+    payload = {'media_id': fav_id, 'pn': page_num, 'ps': page_size}  # ps每页数量最大为20
+    r = requests.get(url, payload)
+    result = r.json()
+    # print(json.dumps(result))
+    if result['code'] == -403 or result['data'] is None:
+        print(result)
+    else:
+        data = result['data']
+        bv_id_list = []
+        for media in data['medias']:
+            bv_id_list.append(media['bv_id'])
+        if data['has_more']:
+            get_specific_public_fav_list(page_num + 1)
+    print(f"已抓取到 收藏夹 fid-{fid} : [{data['info']['title']}] 的 {str(len(bv_id_list))} 个视频")
+    return bv_id_list
+
+
 if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# 访问 https://www.jetbrains.com/help/pycharm/ 获取 PyCharm 帮助
+    fid = 2797980160
+    bv_id_list = get_specific_public_fav_list(fid)
+    download_list(bv_id_list)
